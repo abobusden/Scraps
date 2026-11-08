@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>RustLand — выживание</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script type="importmap">
+{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}
+</script>
+</head>
+<body class="desktop">
+<canvas id="bg"></canvas>
+<canvas id="game"></canvas>
+
+<!-- Загрузка -->
+<section id="loading" class="screen"><div class="logo big">RUSTLAND</div><div class="spinner"></div><div class="bar"><i id="load-bar"></i></div><p id="load-tip">Загрузка…</p></section>
+
+<!-- Главное меню -->
+<section id="menu" class="screen active">
+  <div class="logo big">RUSTLAND</div><p class="sub">Выживание на большом острове</p>
+  <div class="menu-list">
+    <button class="btn primary" data-go="servers">Играть</button>
+    <button class="btn" data-go="shop">Магазин</button>
+    <button class="btn" data-go="skins">Инвентарь</button>
+    <button class="btn" data-go="settings">Настройки</button>
+    <button class="btn" data-go="report">Репорт</button>
+    <button class="btn danger" id="btn-logout">Выйти</button>
+  </div>
+  <div class="menu-foot"><span>v1.0.0</span><span id="menu-user"></span><button class="btn small" data-go="profile" id="btn-profile">Профиль</button></div>
+</section>
+
+<!-- Вход / регистрация -->
+<section id="auth" class="screen"><div class="panel narrow">
+  <div class="logo">RUSTLAND</div>
+  <div class="tabs"><button class="tab active" data-tab="login">Вход</button><button class="tab" data-tab="register">Регистрация</button></div>
+  <form id="form-login" class="form" autocomplete="on">
+    <input id="l-login" placeholder="Логин" autocomplete="username" maxlength="16">
+    <div class="pw"><input id="l-pass" type="password" placeholder="Пароль" autocomplete="current-password"><button type="button" class="eye" data-eye="l-pass" aria-label="Показать пароль">👁</button></div>
+    <button class="btn primary" type="submit">Войти</button>
+    <a href="#" class="link" data-tab-link="register">Нет аккаунта? Зарегистрироваться</a>
+  </form>
+  <form id="form-register" class="form hidden" autocomplete="off">
+    <input id="r-login" placeholder="Логин (3–16: буквы, цифры, _)" maxlength="16">
+    <div class="pw"><input id="r-pass" type="password" placeholder="Пароль (минимум 6)"><button type="button" class="eye" data-eye="r-pass" aria-label="Показать пароль">👁</button></div>
+    <div class="strength"><i id="r-strength"></i></div>
+    <input id="r-pass2" type="password" placeholder="Повторите пароль">
+    <button class="btn primary" type="submit">Создать аккаунт</button>
+    <a href="#" class="link" data-tab-link="login">Уже есть аккаунт? Войти</a>
+  </form>
+</div></section>
+
+<!-- Серверы -->
+<section id="servers" class="screen"><div class="panel">
+  <h2>Список серверов</h2>
+  <div id="srv-local" class="cards"></div>
+  <div class="row end"><button class="btn" id="srv-refresh">Обновить</button><button class="btn" data-go="menu">Назад</button></div>
+</div></section>
+
+<!-- Магазин -->
+<section id="shop" class="screen"><div class="panel wide">
+  <h2>Магазин <span class="balance" id="shop-balance"></span></h2>
+  <div id="shop-case" class="cards"></div><h3>Скины</h3><div id="shop-skins" class="grid"></div>
+  <div class="row end"><button class="btn" data-go="menu">Назад</button></div>
+</div></section>
+
+<!-- Инвентарь скинов -->
+<section id="skins" class="screen"><div class="panel wide">
+  <h2>Инвентарь</h2><p class="muted">Применённый скин получают все предметы, которые вы скрафтите в игре.</p>
+  <div id="inv-cases" class="cards"></div><div id="inv-skins" class="grid"></div>
+  <div class="row end"><button class="btn" data-go="menu">Назад</button></div>
+</div></section>
+
+<!-- Настройки -->
+<section id="settings" class="screen"><div class="panel wide split">
+  <nav id="set-nav"><button class="active" data-pane="gfx">Графика</button><button data-pane="snd">Звук</button><button data-pane="ctl">Управление</button><button data-pane="game">Игра</button><button data-pane="acc">Аккаунт</button></nav>
+  <div id="set-body"></div>
+  <div class="set-foot row end"><button class="btn primary" id="set-save">Сохранить</button><button class="btn" id="set-back">Назад</button></div>
+</div></section>
+
+<!-- Репорт -->
+<section id="report" class="screen"><div class="panel narrow">
+  <h2>Репорт</h2>
+  <select id="rep-theme"><option>Баг</option><option>Читер</option><option>Оскорбления</option><option>Другое</option></select>
+  <textarea id="rep-text" maxlength="500" rows="5" placeholder="Опишите проблему (до 500 символов)"></textarea>
+  <div class="row"><button class="btn small" id="rep-shot">Скриншот игры</button><label class="btn small">Файл<input type="file" id="rep-file" accept="image/*" hidden></label><span id="rep-shot-state" class="muted"></span></div>
+  <div class="row end"><button class="btn primary" id="rep-send">Отправить</button><button class="btn" id="rep-back">Назад</button></div>
+</div></section>
+
+<!-- Профиль -->
+<section id="profile" class="screen"><div class="panel narrow">
+  <div class="avatar" id="pf-avatar"></div><h2 id="pf-name"></h2><p class="muted" id="pf-date"></p>
+  <div id="pf-stats" class="stats"></div>
+  <div class="row end"><button class="btn" id="pf-pass">Сменить пароль</button><button class="btn danger" id="pf-logout">Выйти из аккаунта</button><button class="btn" data-go="menu">Назад</button></div>
+</div></section>
+
+<!-- Пауза -->
+<section id="pause" class="screen overlay"><div class="panel narrow">
+  <h2>Пауза</h2>
+  <button class="btn primary" id="pa-resume">Продолжить</button><button class="btn" id="pa-settings">Настройки</button><button class="btn" id="pa-report">Репорт</button><button class="btn danger" id="pa-exit">Выйти в меню</button>
+  <p class="muted" id="pa-info"></p>
+</div></section>
+
+<!-- HUD -->
+<div id="hud" class="hidden">
+  <div id="crosshair"></div><div id="hitmark"></div><div id="dmgflash"></div><div id="lowhp"></div>
+  <div id="vitals"><div class="vbar hp"><i id="v-hp"></i><b id="t-hp"></b></div><div class="vbar food"><i id="v-food"></i><b>Голод</b></div><div class="vbar water"><i id="v-water"></i><b>Жажда</b></div></div>
+  <div id="hotbar"></div>
+  <div id="ammo"></div>
+  <div id="modes"></div>
+  <div id="prompt"></div>
+  <div id="progress"><i></i></div>
+  <div id="mapbox"><canvas id="minimap" width="200" height="200"></canvas><canvas id="compass" width="200" height="22"></canvas></div>
+  <div id="debug"></div>
+  <div id="killfeed"></div>
+  <div id="chat"><div id="chat-msgs"></div><div id="chat-input" class="hidden"><div id="chat-sugg"></div><input id="chat-field" maxlength="200" autocomplete="off" placeholder="Сообщение… (/ для команд)"><span id="chat-count">0/200</span><button class="btn small" id="chat-send">Отправить</button></div></div>
+  <div id="death" class="hidden"><h1>Вы погибли</h1><p id="death-by"></p><button class="btn primary" id="btn-respawn">Возродиться</button></div>
+  <div id="tutorial" class="hidden"><div class="panel narrow"><h3>Как выжить</h3><p>Собирай дерево и камень стартовым камнем (ЛКМ / тап по кнопке атаки), крафти топор и кирку (C), строй базу, не умирай — PvP везде. Закрыть: Esc / тап.</p></div></div>
+</div>
+<div id="panel-inv" class="gamepanel hidden"></div>
+<div id="panel-craft" class="gamepanel hidden"></div>
+<div id="panel-players" class="gamepanel hidden"></div>
+<div id="panel-map" class="gamepanel hidden"><canvas id="bigmap" width="700" height="700"></canvas></div>
+<div id="touch" class="hidden">
+  <div id="joy"><i></i></div>
+  <button class="tbtn" data-act="jump" style="right:90px;bottom:150px">⤒</button>
+  <button class="tbtn" data-act="crouch" style="right:20px;bottom:150px">⤓</button>
+  <button class="tbtn big" data-act="attack" style="right:30px;bottom:30px">✊</button>
+  <button class="tbtn" data-act="aim" style="right:130px;bottom:50px">◎</button>
+  <button class="tbtn" data-act="interact" style="right:130px;bottom:120px">E</button>
+  <button class="tbtn" data-act="reload" style="right:200px;bottom:50px">⟳</button>
+  <button class="tbtn s" data-act="inventory" style="left:12px;top:70px">🎒</button>
+  <button class="tbtn s" data-act="craft" style="left:70px;top:70px">🛠</button>
+  <button class="tbtn s" data-act="chat" style="left:128px;top:70px">💬</button>
+  <button class="tbtn s" data-act="pause" style="left:186px;top:70px">⏸</button>
+  <button class="tbtn s" data-act="map" style="left:244px;top:70px">🗺</button>
+</div>
+<div id="rotate-hint" class="hidden">Поверните устройство горизонтально</div>
+<div id="case-stage" class="hidden"><canvas id="case-canvas"></canvas><div id="case-info"></div><div class="row"><button class="btn" id="case-skip">Пропустить</button><button class="btn primary hidden" id="case-take">Забрать</button></div></div>
+<div id="modals"></div><div id="toasts"></div>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
